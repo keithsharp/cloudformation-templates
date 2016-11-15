@@ -2,7 +2,7 @@
 This repository contains some of the [Amazon Web Services](http://aws.amazon.com) [Cloudformation templates](https://aws.amazon.com/cloudformation/) that I use to provision infrastructure on Amazon's cloud service.
 
 ## VPC Template
-This [template creates a simple VPC](https://github.com/keithsharp/cloudformation-templates/vpc-template.yaml) with the following resources:
+This [template creates a simple VPC](https://github.com/keithsharp/cloudformation-templates/blob/master/vpc-template.yaml) with the following resources:
 
 * An Internet gateway.
 * A public subnet containing an autoscaling group that launches a single bastion host.  The subnet allocates a public IP address to the bastion host.  The bastion host is placed in a security group that allows SSH access from anywhere on the Internet.
