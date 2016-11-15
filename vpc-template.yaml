@@ -1,0 +1,250 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+    VPC:
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: 10.1.0.0/16
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            InstanceTenancy: default
+            Tags:
+                - Key: Name
+                  Value: Cloudformation Test VPC
+
+    BastionHostSubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId:
+                Ref: VPC
+            CidrBlock: 10.1.1.0/28
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: Bastion Host Subnet
+
+    InternetGateway:
+        Type: AWS::EC2::InternetGateway
+        Properties:
+            Tags:
+                - Key: Name
+                  Value: Internet Gateway
+
+    AttachGateway:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            VpcId:
+                Ref: VPC
+            InternetGatewayId:
+                Ref: InternetGateway
+
+    BastionHostSubnetRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId:
+                Ref: VPC
+            Tags:
+                - Key: Name
+                  Value: Bastion Host Subnet Route Table
+
+    BastionHostInternetRoute:
+        Type: AWS::EC2::Route
+        DependsOn: InternetGateway
+        Properties:
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId:
+                Ref: InternetGateway
+            RouteTableId:
+                Ref: BastionHostSubnetRouteTable
+
+    BastionHostSubnetRouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId:
+                Ref: BastionHostSubnetRouteTable
+            SubnetId:
+                Ref: BastionHostSubnet
+
+    BastionHostSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: Allow SSH to Bastion Host
+            VpcId:
+                Ref: VPC
+            SecurityGroupIngress:
+              - IpProtocol: tcp
+                FromPort: '22'
+                ToPort: '22'
+                CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+              - IpProtocol: -1
+                CidrIp: 0.0.0.0/0
+            Tags:
+                - Key: Name
+                  Value: Bastion Host Security Group
+
+    BastionHostLaunchConfig:
+        Type: "AWS::AutoScaling::LaunchConfiguration"
+        Properties:
+            AssociatePublicIpAddress: true
+            ImageId: ami-9398d3e0 # Amazon Linux in eu-west-1
+            InstanceMonitoring: false
+            InstanceType: t2.micro
+            KeyName: TestStack
+            PlacementTenancy: default
+            SecurityGroups:
+              - Ref: BastionHostSecurityGroup
+
+    BastionHostScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            LaunchConfigurationName:
+                Ref: BastionHostLaunchConfig
+            MinSize: '1'
+            MaxSize: '1'
+            VPCZoneIdentifier:
+              - Ref: BastionHostSubnet
+            Tags:
+              - Key: Name
+                Value: Bastion Host
+                PropagateAtLaunch: true
+
+    NatGatewaySubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId:
+                Ref: VPC
+            CidrBlock: 10.1.1.16/28
+            MapPublicIpOnLaunch: true
+            Tags:
+                - Key: Name
+                  Value: NAT Gateway Host Subnet
+
+    NatGatewaySubnetRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId:
+                Ref: VPC
+            Tags:
+                - Key: Name
+                  Value: NAT Gateway Subnet Route Table
+
+    NatGatewayInternetRoute:
+        Type: AWS::EC2::Route
+        DependsOn: InternetGateway
+        Properties:
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId:
+                Ref: InternetGateway
+            RouteTableId:
+                Ref: NatGatewaySubnetRouteTable
+
+    NatGatewaySubnetRouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId:
+                Ref: NatGatewaySubnetRouteTable
+            SubnetId:
+                Ref: NatGatewaySubnet
+
+    NatGatewayEIP:
+        Type: AWS::EC2::EIP
+        Properties:
+            Domain: vpc
+
+    NatGateway:
+        DependsOn: AttachGateway
+        Type: AWS::EC2::NatGateway
+        Properties:
+            AllocationId:
+                Fn::GetAtt:
+                  - NatGatewayEIP
+                  - AllocationId
+            SubnetId:
+                Ref: NatGatewaySubnet
+
+    PrivateSubnetA:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId:
+                Ref: VPC
+            CidrBlock: 10.1.2.0/24
+            MapPublicIpOnLaunch: false
+            Tags:
+                - Key: Name
+                  Value: Private Subnet A
+
+    PrivateSubnetARouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId:
+                Ref: VPC
+            Tags:
+                - Key: Name
+                  Value: Private Subnet A Route Table
+
+    PrivateSubnetANatInternetRoute:
+        Type: AWS::EC2::Route
+        DependsOn: NatGateway
+        Properties:
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId:
+                Ref: NatGateway
+            RouteTableId:
+                Ref: PrivateSubnetARouteTable
+
+    PrivateSubnetARouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId:
+                Ref: PrivateSubnetARouteTable
+            SubnetId:
+                Ref: PrivateSubnetA
+
+    PrivateSubnetASecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: Allow SSH from Bastion Host
+            VpcId:
+                Ref: VPC
+            SecurityGroupIngress:
+              - IpProtocol: tcp
+                FromPort: '22'
+                ToPort: '22'
+                SourceSecurityGroupId:
+                    Fn::GetAtt:
+                      - BastionHostSecurityGroup
+                      - GroupId
+            SecurityGroupEgress:
+              - IpProtocol: -1
+                CidrIp: 0.0.0.0/0
+            Tags:
+                - Key: Name
+                  Value: Private Subnet A Security Group
+
+    PrivateSubnetALaunchConfig:
+        Type: "AWS::AutoScaling::LaunchConfiguration"
+        Properties:
+            AssociatePublicIpAddress: false
+            ImageId: ami-9398d3e0 # Amazon Linux in eu-west-1
+            InstanceMonitoring: false
+            InstanceType: t2.micro
+            KeyName: TestStack
+            PlacementTenancy: default
+            SecurityGroups:
+              - Ref: PrivateSubnetASecurityGroup
+
+    PrivateSubnetAScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            LaunchConfigurationName:
+                Ref: PrivateSubnetALaunchConfig
+            MinSize: '1'
+            MaxSize: '1'
+            VPCZoneIdentifier:
+              - Ref: PrivateSubnetA
+            Tags:
+                - Key: Name
+                  Value: Worker Host
+                  PropagateAtLaunch: true
