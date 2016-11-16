@@ -10,8 +10,8 @@ Resources:
             EnableDnsHostnames: true
             InstanceTenancy: default
             Tags:
-                - Key: Name
-                  Value: Cloudformation Test VPC
+              - Key: Name
+                Value: Cloudformation Test VPC
 
     BastionHostSubnet:
         Type: AWS::EC2::Subnet
@@ -21,15 +21,15 @@ Resources:
             CidrBlock: 10.1.1.0/28
             MapPublicIpOnLaunch: true
             Tags:
-                - Key: Name
-                  Value: Bastion Host Subnet
+              - Key: Name
+                Value: Bastion Host Subnet
 
     InternetGateway:
         Type: AWS::EC2::InternetGateway
         Properties:
             Tags:
-                - Key: Name
-                  Value: Internet Gateway
+              - Key: Name
+                Value: Internet Gateway
 
     AttachGateway:
         Type: AWS::EC2::VPCGatewayAttachment
@@ -45,8 +45,8 @@ Resources:
             VpcId:
                 Ref: VPC
             Tags:
-                - Key: Name
-                  Value: Bastion Host Subnet Route Table
+              - Key: Name
+                Value: Bastion Host Subnet Route Table
 
     BastionHostInternetRoute:
         Type: AWS::EC2::Route
@@ -81,8 +81,8 @@ Resources:
               - IpProtocol: -1
                 CidrIp: 0.0.0.0/0
             Tags:
-                - Key: Name
-                  Value: Bastion Host Security Group
+              - Key: Name
+                Value: Bastion Host Security Group
 
     BastionHostLaunchConfig:
         Type: "AWS::AutoScaling::LaunchConfiguration"
@@ -118,8 +118,8 @@ Resources:
             CidrBlock: 10.1.1.16/28
             MapPublicIpOnLaunch: true
             Tags:
-                - Key: Name
-                  Value: NAT Gateway Host Subnet
+              - Key: Name
+                Value: NAT Gateway Host Subnet
 
     NatGatewaySubnetRouteTable:
         Type: AWS::EC2::RouteTable
@@ -127,8 +127,8 @@ Resources:
             VpcId:
                 Ref: VPC
             Tags:
-                - Key: Name
-                  Value: NAT Gateway Subnet Route Table
+              - Key: Name
+                Value: NAT Gateway Subnet Route Table
 
     NatGatewayInternetRoute:
         Type: AWS::EC2::Route
@@ -172,8 +172,8 @@ Resources:
             CidrBlock: 10.1.2.0/24
             MapPublicIpOnLaunch: false
             Tags:
-                - Key: Name
-                  Value: Private Subnet A
+              - Key: Name
+                Value: Private Subnet A
 
     PrivateSubnetARouteTable:
         Type: AWS::EC2::RouteTable
@@ -181,8 +181,8 @@ Resources:
             VpcId:
                 Ref: VPC
             Tags:
-                - Key: Name
-                  Value: Private Subnet A Route Table
+              - Key: Name
+                Value: Private Subnet A Route Table
 
     PrivateSubnetANatInternetRoute:
         Type: AWS::EC2::Route
@@ -220,8 +220,8 @@ Resources:
               - IpProtocol: -1
                 CidrIp: 0.0.0.0/0
             Tags:
-                - Key: Name
-                  Value: Private Subnet A Security Group
+              - Key: Name
+                Value: Private Subnet A Security Group
 
     PrivateSubnetALaunchConfig:
         Type: "AWS::AutoScaling::LaunchConfiguration"
@@ -245,6 +245,6 @@ Resources:
             VPCZoneIdentifier:
               - Ref: PrivateSubnetA
             Tags:
-                - Key: Name
-                  Value: Worker Host
-                  PropagateAtLaunch: true
+              - Key: Name
+                Value: Worker Host
+                PropagateAtLaunch: true

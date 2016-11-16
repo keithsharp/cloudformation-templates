@@ -13,4 +13,6 @@ Because the template doesn't create any network ACLs AWS will automatically crea
 
 The template doesn't have any parameterization so you'll need to edit it to set the correct AMI ID if you're not deploying into eu-west-1 (Ireland), if Amazon have released a new Amazon Linux AMI, or if you want to change the subnet structure.
 
+I have written a [blog post](https://keithmsharp.wordpress.com/2016/11/15/building-a-vpc-with-aws-cloudformation/) describing in more detail how this template works.
+
 Keith Sharp, [kms@passback.co.uk](mailto:kms@passback.co.uk)
